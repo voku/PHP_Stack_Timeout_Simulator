@@ -1,0 +1,5 @@
+{
+  "name": "PHP Timeout Cascade Simulator",
+  "description": "An interactive visualization of the PHP request lifecycle, demonstrating the differences between Web Server, FPM, PHP CPU, and External timeouts.",
+  "requestFramePermissions": []
+}
