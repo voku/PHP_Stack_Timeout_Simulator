@@ -1,15 +1,20 @@
 import React from 'react';
-import { SimulationState, ErrorSource, Config, ServerType } from '../types';
-import { Globe, Server, Box, Cpu, Database, Skull, CheckCircle, Clock, AlertOctagon, XCircle, ZapOff, Ghost, Lock, ArrowRight } from 'lucide-react';
+import { SimulationState, ErrorSource, Config, ServerType, Scenario } from '../types';
+import { Globe, Server, Box, Cpu, Database, Skull, CheckCircle, Clock, AlertOctagon, XCircle, ZapOff, Ghost, Lock, ArrowRight, Play, RotateCcw } from 'lucide-react';
 
 interface Props {
   state: SimulationState;
   config: Config;
   serverType: ServerType;
+  currentScenario: Scenario | null;
+  onRunOrRerun: () => void;
 }
 
-const VisualMap: React.FC<Props> = ({ state, config, serverType }) => {
+const VisualMap: React.FC<Props> = ({ state, config, serverType, currentScenario, onRunOrRerun }) => {
   const { activeStage, errorSource, wallClockTime, cpuTime, status } = state;
+
+  const isRunning = status === 'RUNNING';
+  const hasRunBefore = currentScenario !== null;
 
   // Helper to determine active/error state of a node
   const getNodeState = (stage: string) => {
@@ -142,6 +147,34 @@ const VisualMap: React.FC<Props> = ({ state, config, serverType }) => {
 
   return (
     <div className="w-full overflow-x-auto p-4 custom-scrollbar">
+        {/* Header with Run/Re-run Button and Scenario Name */}
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <button
+            onClick={onRunOrRerun}
+            disabled={isRunning}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98]"
+          >
+            {hasRunBefore ? (
+              <>
+                <RotateCcw className="w-4 h-4" />
+                Re-run
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 fill-current" />
+                Run Random Scenario
+              </>
+            )}
+          </button>
+          
+          {currentScenario && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-900/50 border border-indigo-500/30 rounded-lg">
+              <span className="text-xs text-slate-400">Current Scenario:</span>
+              <span className="text-sm font-semibold text-indigo-300">{currentScenario.name}</span>
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center justify-center min-w-[600px] py-10 px-4">
             <Node 
                 id="client" 
