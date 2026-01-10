@@ -263,6 +263,11 @@ const App: React.FC = () => {
             </div>
           </div>
 
+          <ScenarioSelector 
+            onRun={startSimulation} 
+            status={state.status} 
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              {/* Info Box */}
              <div className="bg-blue-900/20 border border-blue-800/50 p-4 rounded-lg flex flex-col gap-3">
@@ -294,10 +299,6 @@ const App: React.FC = () => {
             status={state.status} 
             serverType={serverType}
             onConfigChange={handleConfigChange} 
-          />
-          <ScenarioSelector 
-            onRun={startSimulation} 
-            status={state.status} 
           />
         </div>
       </div>
