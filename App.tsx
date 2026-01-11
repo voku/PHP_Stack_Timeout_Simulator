@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Config, SimulationState, SimulationStatus, ErrorSource, Scenario, ServerType } from './types';
-import { DEFAULT_CONFIG } from './constants';
+import { DEFAULT_CONFIG, SCENARIOS } from './constants';
 import ControlPanel from './components/ControlPanel';
 import VisualMap from './components/VisualMap';
 import ScenarioSelector from './components/ScenarioSelector';
@@ -22,6 +22,7 @@ const App: React.FC = () => {
     errorSource: ErrorSource.NONE,
     logs: ['Ready to simulate...']
   });
+  const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null);
 
   // Refs for simulation loop
   const scenarioRef = useRef<Scenario | null>(null);
@@ -56,6 +57,7 @@ const App: React.FC = () => {
 
   const startSimulation = (scenario: Scenario) => {
     scenarioRef.current = scenario;
+    setCurrentScenario(scenario);
     
     // Clear any previous timer to avoid double-runs
     if (timerRef.current) clearInterval(timerRef.current);
@@ -68,6 +70,16 @@ const App: React.FC = () => {
       errorSource: ErrorSource.NONE,
       logs: [`Started: ${scenario.name} (${serverType === 'nginx-fpm' ? 'Nginx + FPM' : 'Apache + mod_php'})`]
     });
+  };
+
+  const handleRunOrRerun = () => {
+    // If there's a current scenario, re-run it. Otherwise, pick a random one.
+    if (currentScenario) {
+      startSimulation(currentScenario);
+    } else {
+      const randomScenario = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
+      startSimulation(randomScenario);
+    }
   };
 
   const stopSimulation = (status: SimulationStatus, error: ErrorSource, finalLog: string) => {
@@ -250,7 +262,13 @@ const App: React.FC = () => {
             </div>
             
             <div className="flex-1 flex flex-col justify-center bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
-                <VisualMap state={state} config={config} serverType={serverType} />
+                <VisualMap 
+                  state={state} 
+                  config={config} 
+                  serverType={serverType} 
+                  currentScenario={currentScenario}
+                  onRunOrRerun={handleRunOrRerun}
+                />
             </div>
 
             {/* Logs Area */}
@@ -262,6 +280,11 @@ const App: React.FC = () => {
                ))}
             </div>
           </div>
+
+          <ScenarioSelector 
+            onRun={startSimulation} 
+            status={state.status} 
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              {/* Info Box */}
@@ -294,10 +317,6 @@ const App: React.FC = () => {
             status={state.status} 
             serverType={serverType}
             onConfigChange={handleConfigChange} 
-          />
-          <ScenarioSelector 
-            onRun={startSimulation} 
-            status={state.status} 
           />
         </div>
       </div>
