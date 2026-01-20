@@ -49,11 +49,7 @@ request_terminate_timeout = ${config.fpmTimeout}s
 
 ; Enable slow request logging for debugging
 slowlog = /var/log/php-fpm/www-slow.log
-request_slowlog_timeout = 5s
-
-; Process management (affects resource usage)
-pm = dynamic
-pm.max_children = 50` 
+request_slowlog_timeout = 5s` 
       : `; FPM not used in Apache mod_php mode
 ; Process management is handled by MPM modules
 ; (mpm_prefork, mpm_worker, or mpm_event)`;
@@ -82,7 +78,7 @@ max_input_time = 60`;
         // This is the ONLY way to catch slow DB connections at app level
         PDO::ATTR_TIMEOUT => ${config.dbTimeout},
         
-        // Additional recommended settings
+        // Recommended: Ensures timeout errors are thrown as exceptions
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     ],
 ],
