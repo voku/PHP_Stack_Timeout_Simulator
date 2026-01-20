@@ -107,9 +107,9 @@ const ControlPanel: React.FC<Props> = ({ config, status, serverType, onConfigCha
       </div>
       
       <div className="mt-4 p-3 bg-slate-900/50 rounded text-xs text-slate-400">
-        <p className="font-semibold text-slate-300 mb-1">Architecture Insight:</p>
+        <p className="font-semibold text-slate-300 mb-1">Timeout Cascade:</p>
         <p className="leading-relaxed">
-           If <strong>Client Timeout</strong> is lower than your backend timeouts, you create "Zombie Processes". The user sees an error, but your server keeps working, wasting resources.
+           Each layer has its own timeout. The <strong>first one to trigger</strong> determines what error the user sees. To avoid zombie processes, ensure: <code className="text-indigo-300">App Timeouts &lt; Backend Timeouts &lt; Client Timeout</code>.
         </p>
       </div>
     </div>

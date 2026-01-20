@@ -24,58 +24,81 @@ const ConfigPreview: React.FC<Props> = ({ config, serverType }) => {
         include fastcgi_params;
         fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
         
-        # Stops Nginx from waiting too long for FPM
+        # Critical: Stops Nginx from waiting too long for FPM
+        # Should be slightly higher than FPM timeout to preserve logs
         fastcgi_read_timeout ${config.nginxTimeout}s;
         
-        # Optional: Buffer size to prevent disk I/O on large headers
+        # Buffer settings to prevent disk I/O on large responses
         fastcgi_buffer_size 32k;
         fastcgi_buffers 8 16k;
     }
 }` 
-      : `# Apache httpd.conf
+      : `# Apache httpd.conf or virtual host config
+# Maximum time to wait for a response from PHP
 Timeout ${config.nginxTimeout}
 
-# ProxyTimeout is also relevant if using mod_proxy_fcgi
+# For mod_proxy_fcgi (if using FastCGI with Apache)
 ProxyTimeout ${config.nginxTimeout}`;
 
     const fpm = serverType === 'nginx-fpm' 
       ? `; /etc/php/8.2/fpm/pool.d/www.conf
 
-; The hard kill switch for the worker process
-; Should generally be slightly lower than Nginx timeout
+; Wall clock timeout - terminates process after this time
+; Should be LOWER than fastcgi_read_timeout to catch issues early
 request_terminate_timeout = ${config.fpmTimeout}s
 
-; Optional: Slow log to catch these issues
+; Enable slow request logging for debugging
 slowlog = /var/log/php-fpm/www-slow.log
-request_slowlog_timeout = 5s` 
+request_slowlog_timeout = 5s
+
+; Process management (affects resource usage)
+pm = dynamic
+pm.max_children = 50` 
       : `; FPM not used in Apache mod_php mode
-; Worker management is handled by mpm_prefork / mpm_worker`;
+; Process management is handled by MPM modules
+; (mpm_prefork, mpm_worker, or mpm_event)`;
 
-    const php = `; /etc/php/8.2/fpm/php.ini
+    const php = `; /etc/php/8.2/fpm/php.ini (or cli/php.ini)
 
-; Limits CPU time, NOT Wall Clock time (on Linux)
-; Does not count sleep(), stream waits, or DB queries!
+; CPU time limit, NOT wall clock time (Linux)
+; Does NOT count: sleep(), I/O waits, DB queries, network calls
+; Only counts: active CPU computation
 max_execution_time = ${config.phpCpuLimit}
 
-; Memory limit (often related to timeouts due to GC thrashing)
-memory_limit = 256M`;
+; Memory limit (excessive memory can cause GC thrashing)
+memory_limit = 256M
 
-    const app = `// config/database.php (Laravel/Generic)
+; Input timeouts (form/upload handling)
+max_input_time = 60`;
+
+    const app = `// Database Configuration (Laravel/Symfony/Generic PDO)
 
 'mysql' => [
     'driver' => 'mysql',
     'host' => env('DB_HOST'),
+    'database' => env('DB_DATABASE'),
     'options' => [
-        // CRITICAL: The only way to catch a hanging DB connection
-        // properly without relying on TCP keepalives.
+        // CRITICAL: Without this, hanging queries will not timeout
+        // This is the ONLY way to catch slow DB connections at app level
         PDO::ATTR_TIMEOUT => ${config.dbTimeout},
+        
+        // Additional recommended settings
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     ],
 ],
 
-// Guzzle / HTTP Client
+// HTTP Client Timeout (Guzzle, cURL, file_get_contents)
+// Without explicit timeout, external API calls can hang indefinitely!
+
+// Guzzle HTTP Client
 $client = new \\GuzzleHttp\\Client([
-    'timeout' => ${config.dbTimeout}, // Connect + Read timeout
-]);`;
+    'timeout' => ${config.dbTimeout},         // Total request timeout
+    'connect_timeout' => 10,    // Connection establishment
+]);
+
+// cURL (raw)
+curl_setopt($ch, CURLOPT_TIMEOUT, ${config.dbTimeout});
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);`;
 
     return { nginx, fpm, php, app };
   };
