@@ -5,7 +5,7 @@ import ControlPanel from './components/ControlPanel';
 import VisualMap from './components/VisualMap';
 import ScenarioSelector from './components/ScenarioSelector';
 import ConfigPreview from './components/ConfigPreview';
-import { Info, Terminal, Layers } from 'lucide-react';
+import { Info, Terminal, Layers, ExternalLink, Github } from 'lucide-react';
 
 const TICK_RATE = 100; // ms per tick
 // 100ms tick = 1s sim time.
@@ -216,32 +216,55 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8 max-w-7xl mx-auto">
-      <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-            <h1 className="text-3xl font-bold text-white mb-2">PHP Stack Timeout Simulator</h1>
-            <p className="text-slate-400 max-w-3xl">
-            Visualizing the difference between <span className="text-indigo-400">Web Server</span>, <span className="text-orange-400">Process Manager</span>, <span className="text-blue-400">PHP CPU</span>, and <span className="text-purple-400">Client</span> timeouts.
-            </p>
-        </div>
-        
-        {/* Server Toggle */}
-        <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700 self-start md:self-auto">
-            <button
-                onClick={() => switchServerType('nginx-fpm')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${serverType === 'nginx-fpm' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                disabled={state.status === SimulationStatus.RUNNING}
-            >
-                <Layers className="w-4 h-4" />
-                Nginx + FPM
-            </button>
-            <button
-                onClick={() => switchServerType('apache-modphp')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${serverType === 'apache-modphp' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                disabled={state.status === SimulationStatus.RUNNING}
-            >
-                <Layers className="w-4 h-4" />
-                Apache + mod_php
-            </button>
+      <header className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+          <div className="flex-grow">
+              <h1 className="text-3xl font-bold text-white mb-2">PHP Stack Timeout Simulator</h1>
+              <p className="text-slate-400 max-w-3xl">
+              Visualizing the difference between <span className="text-indigo-400">Web Server</span>, <span className="text-orange-400">Process Manager</span>, <span className="text-blue-400">PHP CPU</span>, and <span className="text-purple-400">Client</span> timeouts.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-3">
+                <a 
+                  href="https://dev.to/suckup_de/timeout-problems-web-server-php-201l" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-indigo-400 hover:text-indigo-300 transition-colors group"
+                >
+                  <ExternalLink className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  Read the original blog post
+                </a>
+                <span className="text-slate-700">|</span>
+                <a 
+                  href="https://github.com/voku/PHP_Stack_Timeout_Simulator" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors group"
+                >
+                  <Github className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  Contribute on GitHub
+                </a>
+              </div>
+          </div>
+          
+          {/* Server Toggle */}
+          <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700 self-start md:self-auto">
+              <button
+                  onClick={() => switchServerType('nginx-fpm')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${serverType === 'nginx-fpm' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  disabled={state.status === SimulationStatus.RUNNING}
+              >
+                  <Layers className="w-4 h-4" />
+                  Nginx + FPM
+              </button>
+              <button
+                  onClick={() => switchServerType('apache-modphp')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${serverType === 'apache-modphp' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                  disabled={state.status === SimulationStatus.RUNNING}
+              >
+                  <Layers className="w-4 h-4" />
+                  Apache + mod_php
+              </button>
+          </div>
         </div>
       </header>
 
@@ -291,14 +314,17 @@ const App: React.FC = () => {
              <div className="bg-blue-900/20 border border-blue-800/50 p-4 rounded-lg flex flex-col gap-3">
                  <div className="flex items-center gap-2 text-blue-400 font-semibold">
                     <Info className="w-5 h-5" />
-                    <span>Sysadmin Note</span>
+                    <span>Critical Insights</span>
                  </div>
-                 <div className="text-sm text-blue-200">
-                   <p className="mb-2">
-                     <strong>Zombie Processes:</strong> If <code>Client Timeout &lt; Nginx Timeout</code>, Nginx keeps the connection to PHP open even after the client disconnects.
+                 <div className="text-sm text-blue-200 space-y-2">
+                   <p>
+                     <strong>Zombie Processes:</strong> If Client Timeout &lt; Server Timeout, the client disconnects but PHP keeps running, wasting server resources.
                    </p>
                    <p>
-                     <strong>The Fix:</strong> Ensure your application has a hard timeout (via <code>max_execution_time</code> or <code>request_terminate_timeout</code>) that is <em>shorter</em> than the load balancer timeout.
+                     <strong>CPU vs Wall Time:</strong> <code>max_execution_time</code> only tracks CPU time. Sleep(), DB queries, and API calls don't count toward it!
+                   </p>
+                   <p>
+                     <strong>Best Practice:</strong> Set timeouts in order: <code>DB/API &lt; PHP CPU &lt; FPM &lt; Web Server &lt; Client/LB</code>
                    </p>
                  </div>
              </div>
