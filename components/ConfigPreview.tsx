@@ -92,13 +92,13 @@ max_input_time = 60`;
 
 // Guzzle HTTP Client
 $client = new \\GuzzleHttp\\Client([
-    'timeout' => ${config.dbTimeout},         // Total request timeout
-    'connect_timeout' => 10,    // Connection establishment
+    'timeout' => ${config.dbTimeout},        // Total request timeout
+    'connect_timeout' => 10,                 // Connection establishment (typically shorter)
 ]);
 
 // cURL (raw)
 curl_setopt($ch, CURLOPT_TIMEOUT, ${config.dbTimeout});
-curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);`;
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);  // TCP handshake timeout`;
 
     return { nginx, fpm, php, app };
   };
